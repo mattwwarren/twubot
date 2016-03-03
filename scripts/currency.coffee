@@ -9,7 +9,7 @@
 #
 
 EARNINGS_PER_TIMEOUT = process.env.HUBOT_CREDITS_PER_X ? 15
-TIMEOUT_MINUTES = process.env.HUBOT_CREDITS_TIMEOUT * 60 * 1000 ? 60000
+TIMEOUT_MINUTES = process.env.HUBOT_CREDITS_TIMEOUT * 60 * 1000 ? 900000
 HUBOT_TWITCH_ADMINS = process.env.HUBOT_TWITCH_ADMINS?.split "," || []
 HUBOT_TWITCH_OWNERS = process.env.HUBOT_TWITCH_OWNERS?.split "," || []
 
@@ -22,14 +22,11 @@ module.exports = (robot) ->
 
   earnCredits = ->
     creds = robot.brain.get('credits') or {}
-    console.log("Creds? : " + JSON.stringify(creds))
     for user in Object.keys(creds)
-      console.log("OLD BANK: " + creds[user]['bank'])
       balance = creds[user]['bank'] ? 0
       balance = parseInt(balance)
       balance += parseInt(EARNINGS_PER_TIMEOUT)
       creds[user]['bank'] = balance
-      console.log("OLD BANK: " + creds[user]['bank'])
     robot.brain.set 'credits', creds
   new cronJob('0 */1 * * * *', earnCredits, null, true)
  
