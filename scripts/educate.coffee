@@ -7,7 +7,7 @@
 #   Assumes admins and owner are set as HUBOT_TWITCH_ADMINS and HUBOT_TWITCH_OWNERS
 #
 # Usage:
-#   !add call "potentially super long response"
+#   !learn call "potentially super long response"
 #
 
 fs = require 'fs'
