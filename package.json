@@ -14,7 +14,7 @@
     "hubot-redis-brain": "0.0.3",
     "hubot-rules": "^0.1.1",
     "hubot-scripts": "^2.16.1",
-    "hubot-twitch-adapter": "git+https://github.com:mattwwarren/hubot-twitch.git",
+    "hubot-twitch-adapter": "git+https://github.com/mattwwarren/hubot-twitch.git",
     "hubot-youtube": "^1.0.1"
   },
   "engines": {
