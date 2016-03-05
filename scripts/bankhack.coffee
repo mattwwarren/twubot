@@ -96,29 +96,26 @@ module.exports = (robot) ->
       wager = parseInt(msg.match[1])
       wagers = robot.brain.get('hack_wagers') ? {}
       creds = robot.brain.get('credits') ? {}
-      if creds != {}
+      current_wager = 0
+      currBalance = 0
+      if user in Object.keys(creds)
         currBalance = parseInt(creds[user]['bank']) ? 0
-        current_wager = 0
 
-        if currBalance < wager
-          msg.send "Trying to be slick, #{user}? You don't have enough credits" +
+      if currBalance < wager
+        msg.send "Trying to be slick, #{user}? You don't have enough credits" +
                    " to wager #{wager}!"
-        else 
-          if user not in Object.keys(wagers)
-            current_wager = wager
-          else
-            current_wager = parseInt(wagers[user])
-            current_wager += wager
+      else 
+        if user not in Object.keys(wagers)
+          current_wager = wager
+        else
+          current_wager = parseInt(wagers[user])
+          current_wager += wager
 
-          wagers[user] = current_wager
-          creds[user]['bank'] = currBalance - wager
-          robot.brain.set 'hack_wagers', wagers
-          robot.brain.set 'credits', creds
-          msg.send "#{user} is in for #{current_wager}."
-       else
-          msg.send "Oh, I've jumped the gun and started the hack before " +
-                   "#{user} have been registered in my system. Sorry, please " +
-                   "play again in #{BANKHACK_MINUTES}"
+        wagers[user] = current_wager
+        creds[user]['bank'] = currBalance - wager
+        robot.brain.set 'hack_wagers', wagers
+        robot.brain.set 'credits', creds
+        msg.send "#{user} is in for #{current_wager}."
     else
       msg.send "Sorry, the heat is too hot. Stay out of the kitchen!" 
     
