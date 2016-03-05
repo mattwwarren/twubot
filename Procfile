@@ -1,1 +1,1 @@
-web: bin/hubot -a twitch -n twitch-hubot
+worker: bin/hubot -a twitch-adapter -n twitch-hubot
