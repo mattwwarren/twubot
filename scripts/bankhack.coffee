@@ -96,7 +96,7 @@ module.exports = (robot) ->
       wager = parseInt(msg.match[1])
       wagers = robot.brain.get('hack_wagers') ? {}
       creds = robot.brain.get('credits') ? {}
-      currBalance = parseInt(creds[user]['bank'])
+      currBalance = parseInt(creds[user]['bank']) ? 0
       current_wager = 0
 
       if currBalance < wager
