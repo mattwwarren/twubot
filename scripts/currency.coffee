@@ -13,16 +13,16 @@ TIMEOUT_MINUTES = process.env.HUBOT_CREDITS_TIMEOUT ? 15
 HUBOT_TWITCH_ADMINS = process.env.HUBOT_TWITCH_ADMINS?.split "," || []
 HUBOT_TWITCH_OWNERS = process.env.HUBOT_TWITCH_OWNERS?.split "," || []
 
-
 module.exports = (robot) ->
   moderators = HUBOT_TWITCH_ADMINS.concat HUBOT_TWITCH_OWNERS
 
   createUser = (user, creds) ->
-    if user not in Object.keys(creds)
-      creds[user] = {}
-      balance = creds[user]['bank'] ? 0
+    checkUser = user.toLowerCase()
+    if checkUser not in Object.keys(creds)
+      creds[checkUser] = {}
+      balance = creds[checkUser]['bank'] ? 0
       balance = parseInt(balance)
-      creds[user]['bank'] = balance
+      creds[checkUser]['bank'] = balance
       
 
   cronJob = require('cron').CronJob
@@ -49,7 +49,7 @@ module.exports = (robot) ->
   # Give 50 credits just for coming by
   robot.enter (msg) ->
     creds = robot.brain.get('credits') or {} 
-    user = msg.envelope.user.name
+    user = msg.envelope.user.name.toLowerCase()
     now = new Date().getTime()
     if user not in Object.keys(creds)
       createUser user, creds
@@ -66,7 +66,7 @@ module.exports = (robot) ->
   # On leave, mark user inactive, stop giving credits
   robot.leave (msg) ->
     creds = robot.brain.get('credits') or {}
-    user = msg.envelope.user.name
+    user = msg.envelope.user.name.toLowerCase()
     if user in Object.keys(creds)
       creds[user]['active'] = 'false'
     
@@ -74,11 +74,11 @@ module.exports = (robot) ->
 
   # Give a user an arbitary number of credits
   robot.hear /^!give (\w+) (\d+)/i, (msg) ->
-    if msg.envelope.user.name not in moderators
+    if msg.envelope.user.name.toLowerCase() not in moderators
       msg.send("Nice try! Not going to happen though.")
     else
       creds = robot.brain.get('credits') or {}
-      user = msg.match[1]
+      user = msg.match[1].toLowerCase()
       amount = msg.match[2]
       if user not in Object.keys(creds)
         createUser user, creds
@@ -92,16 +92,19 @@ module.exports = (robot) ->
   # User wants their balance
   robot.hear /^!balance/i, (msg) ->
     creds = robot.brain.get('credits') or {}
-    user = msg.envelope.user.name
+    wagers = robot.brain.get('hack_wagers') or {}
+    user = msg.envelope.user.name.toLowerCase()
     if user not in Object.keys(creds)
       createUser user, creds
     balance = creds[user]['bank'] ? 0
-    balance = parseInt(balance)
+    if user in Object.keys(wagers)
+      wager = wagers[user]
+      balance = balance + "[-#{wager}]"
     msg.send "#{user}, your balance is #{balance}!"
   
   # Give all users credits!
   robot.hear /^!giveall (\d+)/i, (msg) ->
-    if msg.envelope.user.name not in moderators
+    if msg.envelope.user.name.toLowerCase() not in moderators
       msg.send("Nice try! Not going to happen though.")
     else
       creds = robot.brain.get('credits') or {} 
