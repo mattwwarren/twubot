@@ -19,9 +19,23 @@ module.exports = (robot) ->
   # AFAICT, this does not break any other listening
   robot.hear /.*/i, (allmsgs) ->
     cnr = robot.brain.get('call-n-response') or {}
-    keys_regex = new RegExp("!(" + Object.keys(cnr).join("|") + ")", "i")
+    keys_regex = new RegExp("^!(" + Object.keys(cnr).join("|") + ")", "i")
     robot.hear keys_regex, (res) ->
-      console.log "match: " + res.match
-      console.log "key: " + res.match[1]
-      console.log "value: " + cnr[res.match[1]]
       res.send cnr[res.match[1]]
+
+  # List all commands (or not, if there are a ton)
+  robot.hear /!commandlist/i, (msg) ->
+    cnr = robot.brain.get('call-n-response') or {}
+    resp = "Available commands: "
+    totalCommands = 0
+    for command in Object.keys(cnr)
+      totalCommands += 1
+      if totalCommands == 1
+        resp = resp + command
+      else
+        resp = resp + ", " + command
+    if totalCommands > 20
+      msg.send("Oh my, there are #{totalCommands} in the system! " +
+               "There's no way I could list them all!")
+    else
+      msg.send(resp)
