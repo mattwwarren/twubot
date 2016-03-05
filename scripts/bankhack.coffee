@@ -116,8 +116,8 @@ module.exports = (robot) ->
           robot.brain.set 'credits', creds
           msg.send "#{user} is in for #{current_wager}."
        else
-          msg.send "Oh, I've jumped the gun and started the hack before any " +
-                   "users have been registered in my system. Sorry, please " +
+          msg.send "Oh, I've jumped the gun and started the hack before " +
+                   "#{user} have been registered in my system. Sorry, please " +
                    "play again in #{BANKHACK_MINUTES}"
     else
       msg.send "Sorry, the heat is too hot. Stay out of the kitchen!" 
