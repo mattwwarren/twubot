@@ -1,6 +1,6 @@
 {
   "name": "twitch-hubot",
-  "version": "0.0.0",
+  "version": "0.4.0",
   "private": true,
   "author": "Matt <matttheratplays@gmail.com>",
   "description": "A simple, extensible bot for twitch chat",
@@ -11,7 +11,7 @@
     "hubot-help": "^0.1.1",
     "hubot-heroku-keepalive": "0.0.4",
     "hubot-irc": "^0.2.8",
-    "hubot-redis-brain": "0.0.3",
+    "hubot-mongodb-brain": "^0.1.1",
     "hubot-rules": "^0.1.1",
     "hubot-scripts": "^2.16.1",
     "hubot-twitch-adapter": "git+https://github.com/mattwwarren/hubot-twitch.git",
