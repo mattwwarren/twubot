@@ -11,7 +11,7 @@
     "hubot-help": "^0.1.1",
     "hubot-heroku-keepalive": "0.0.4",
     "hubot-irc": "^0.2.8",
-    "hubot-mongodb-brain": "^0.1.1",
+    "hubot-mongodb-brain": "git+https://github.com/mattwwarren/hubot-mongodb-brain.git",
     "hubot-rules": "^0.1.1",
     "hubot-scripts": "^2.16.1",
     "hubot-twitch-adapter": "git+https://github.com/mattwwarren/hubot-twitch.git",
