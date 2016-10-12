@@ -16,6 +16,9 @@
     "hubot-scripts": "^2.16.1",
     "hubot-twitch-adapter": "git+https://github.com/mattwwarren/hubot-twitch.git",
     "hubot-youtube": "^1.0.1",
+    "humanize-duration": "^3.9.1",
+    "moment": "^2.15.1",
+    "twitch-api": "^0.4.5",
     "underscore": "^1.8.3"
   },
   "engines": {
