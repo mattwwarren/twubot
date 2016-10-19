@@ -1,5 +1,9 @@
 _ = require 'underscore'
 
+HUBOT_TWITCH_ADMINS = process.env.HUBOT_TWITCH_ADMINS?.split "," || []
+HUBOT_TWITCH_OWNERS = process.env.HUBOT_TWITCH_OWNERS?.split "," || []
+moderators = HUBOT_TWITCH_ADMINS.concat HUBOT_TWITCH_OWNERS
+
 class exports.Currency
   constructor: (@robot) ->
     @creds = {}
@@ -51,6 +55,21 @@ class exports.Currency
     
     @robot.brain.set 'credits', @creds
       
+  payCredits: (user, credits) ->
+    if user not in Object.keys(@creds)
+      @createUser user
+      return -1
+    else
+      balance = @creds[user]['bank'] ? 0
+      balance = parseInt(balance)
+      if balance > credits
+        balance -= parseInt(credits)
+        @creds[user]['bank'] = balance
+        @robot.brain.set 'credits', @creds
+        return balance
+      else
+        return -1
+
   updateCredits: (user, credits) ->
     if user not in Object.keys(@creds)
       @createUser user
@@ -71,9 +90,9 @@ class exports.Currency
       balance = balance + "[-#{wager}]"
     return balance
 
-  giveAll: (amount) ->
-    if msg.envelope.user.name.toLowerCase() not in moderators
-      msg.send("Nice try! Not going to happen though.")
+  giveAll: (user, amount) ->
+    if user.toLowerCase() not in moderators
+      return "Nice try! Not going to happen though."
     else
       for user in Object.keys(@creds)
         if @creds[user]['active'] == 'true'
@@ -83,6 +102,7 @@ class exports.Currency
           @creds[user]['bank'] = balance
     
       @robot.brain.set 'credits', @creds
+      return "Gave everyone #{amount} credits!"
 
   checkTop: ->
     balances = []

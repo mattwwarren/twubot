@@ -54,8 +54,8 @@ module.exports = (robot) ->
   # Give all users credits!
   robot.hear /^!giveall (\d+)/i, (msg) ->
     amount = msg.match[1]
-    curr.giveAll amount
-    msg.send "Gave everyone #{amount} credits!"
+    resp = curr.giveAll msg.envelope.user.name.toLowerCase(), amount
+    msg.send resp
 
   robot.hear /^!top$/i, (msg) ->
     resp = curr.checkTop()
