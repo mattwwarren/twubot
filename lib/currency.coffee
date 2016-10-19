@@ -1,4 +1,5 @@
-# Does this work?
+_ = require 'underscore'
+
 class exports.Currency
   constructor: (@robot) ->
     @creds = {}
@@ -82,3 +83,18 @@ class exports.Currency
           @creds[user]['bank'] = balance
     
       @robot.brain.set 'credits', @creds
+
+  checkTop: ->
+    balances = []
+    for user in Object.keys(@creds)
+      checkedBalance = {}
+      checkedBalance['user'] = user
+      checkedBalance['balance'] = @getBalance user
+      balances.push(checkedBalance)
+    rankedBalances = _.sortBy balances, 'balance'
+    top10 = rankedBalances.reverse().slice(0,10)
+    resp = "||"
+    for topUser in top10
+      resp = resp + " " + topUser['user'] + ": " + topUser['balance'] + " |"
+    resp = resp + "|"
+    return resp

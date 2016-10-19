@@ -57,3 +57,6 @@ module.exports = (robot) ->
     curr.giveAll amount
     msg.send "Gave everyone #{amount} credits!"
 
+  robot.hear /^!top$/i, (msg) ->
+    resp = curr.checkTop()
+    msg.send resp
