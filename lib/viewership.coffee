@@ -1,3 +1,6 @@
+# Class to handle viewers, viewer data and viewer analytics
+#
+
 TwitchApi = require 'twitch-api'
 moment = require 'moment'
 class exports.Viewership
@@ -24,7 +27,7 @@ class exports.Viewership
       @users[user]['firstJoined'] = now
     @checkFollows user, (followp) =>
       if followp
-        @users[user]['followDate'] = followp
+        @users[user]['followDate'] = followp.calendar()
 
   userExit: (user) ->
     now = new Date().getTime()
@@ -32,7 +35,7 @@ class exports.Viewership
     @users[user]['lastPart'] = now
     @checkFollows user, (followp) =>
       if followp
-        @users[user]['followDate'] = followp
+        @users[user]['followDate'] = followp.calendar()
 
   getLastSeen: (user) ->
     now = new Date().getTime()
@@ -60,3 +63,17 @@ class exports.Viewership
         callback false
       else
         console.log error
+
+  setCustomGreeting: (user, greeting) ->
+    if @users[user]
+      @users[user]['greeting'] = greeting
+      return true
+    else
+      return false
+    
+  getCustomGreeting: (user) ->
+    if @users[user]
+      return @users[user]['greeting'] || false
+    else
+      return false
+    
