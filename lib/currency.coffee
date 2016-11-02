@@ -83,7 +83,7 @@ class exports.Currency
   getBalance: (user) ->
     wagers = @robot.brain.get('hack_wagers') or {}
     if user not in Object.keys(@creds)
-      createUser user
+      @createUser user
     balance = @creds[user]['bank'] ? 0
     if user in Object.keys(wagers)
       wager = wagers[user]

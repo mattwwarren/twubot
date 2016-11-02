@@ -10,7 +10,7 @@
 #
 
 {EventEmitter} = require 'events'
-REMINDER_TIMEOUT = (process.env.HUBOT_REMINDER_INTERVAL ? 2) * 60 * 1000
+REMINDER_TIMEOUT = process.env.HUBOT_REMINDER_INTERVAL ? 10
 ROOM = process.env.HUBOT_TWITCH_CHANNELS
 remindEvents = new EventEmitter
 
@@ -38,9 +38,8 @@ class Reminders
 module.exports = (robot) ->
   reminders = new Reminders robot
 
-  setTimeout ( ->
-    reminders.remindHumans()
-  ), REMINDER_TIMEOUT
+  # Remind humans on each interval
+  new cronJob("0 */#{REMINDER_TIMEOUT} * * * *", reminders.remindHumans, null, true)
 
   robot.hear /^!addReminder (.*)$/i, (msg) ->
     reminder = msg.match[1]
