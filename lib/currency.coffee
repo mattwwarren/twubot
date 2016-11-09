@@ -62,7 +62,7 @@ class exports.Currency
     else
       balance = @creds[user]['bank'] ? 0
       balance = parseInt(balance)
-      if balance > credits
+      if balance >= credits
         balance -= parseInt(credits)
         @creds[user]['bank'] = balance
         @robot.brain.set 'credits', @creds

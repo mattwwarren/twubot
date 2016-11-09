@@ -7,6 +7,7 @@
 # Notes:
 #
 
+{EventEmitter} = require 'events'
 BANKHACK_MINUTES = process.env.HUBOT_BANKHACK_TIMEOUT ? 15
 BANKHACK_WAGER_TIME = (process.env.HUBOT_BANKHACK_WAGER_TIME ? 2) * 60 * 1000
 BANKHACK_WIN_RATE = process.env.HUBOT_BANKHACK_WIN ? 50
@@ -14,96 +15,82 @@ BANKHACK_WIN_MULTIPLIER = process.env.HUBOT_BANKHACK_MULTIPLIER ? 2
 HUBOT_TWITCH_ADMINS = process.env.HUBOT_TWITCH_ADMINS?.split "," || []
 HUBOT_TWITCH_OWNERS = process.env.HUBOT_TWITCH_OWNERS?.split "," || []
 HUBOT_TWITCH_CHANNELS = process.env.HUBOT_TWITCH_CHANNELS?.split "," || []
+ROOM = process.env.HUBOT_TWITCH_CHANNELS
 
+hackEvents = new EventEmitter
+moderators = HUBOT_TWITCH_ADMINS.concat HUBOT_TWITCH_OWNERS
+oceansThirteen = ['George Clooney', 'Brad Pitt', 'Matt Damon', 'Al Pacino',
+                  'Don Cheadle', 'Bernie Mac', 'Casey Affleck']
 
-module.exports = (robot) ->
-  moderators = HUBOT_TWITCH_ADMINS.concat HUBOT_TWITCH_OWNERS
-  oceansThirteen = ['George Clooney', 'Brad Pitt', 'Matt Damon', 'Al Pacino',
-                    'Don Cheadle', 'Bernie Mac', 'Casey Affleck']
+currency = require '../lib/currency'
 
-  performHack = ->
+class Bankhack
+  constructor: (@robot) -> 
+    @curr = new currency.Currency @robot
+    @cache = {}
+
+    @robot.brain.on 'loaded', =>
+      if @robot.brain.data
+        @cache = @robot.brain.data
+
+  performHack: ->
     hackChance = Math.floor(Math.random() * 100)
-    creds = robot.brain.get('credits') ? {}
-    wagers = robot.brain.get('hack_wagers') ? {}
+    creds = @cache['credits'] ? {}
+    wagers = @cache['hack_wagers'] ? {}
     userCount = 0
     totalWin = 0
     totalLoss = 0
+    result = ""
     if hackChance < BANKHACK_WIN_RATE
       for user in Object.keys(wagers)
-        currBalance = parseInt(creds[user]['bank'])
+        currBalance = @curr.getBalance user
         winnings = parseInt(wagers[user]) * BANKHACK_WIN_MULTIPLIER
         totalWin += winnings
         userCount += 1
-        creds[user]['bank'] = currBalance + winnings
-      robot.brain.set 'credits', creds
-      for room in HUBOT_TWITCH_CHANNELS
-        robot.messageRoom room, "Success! #{userCount} high rollers made it " +
-                                "out alive with #{totalWin} credits."
+        @curr.updateCredits user, winnings
+      result = "Success! #{userCount} high rollers made it " +
+             "out alive with #{totalWin} credits."
     else
       for user in Object.keys(wagers)
         losings = parseInt(wagers[user])
         totalLoss += losings
         userCount += 1
-      for room in HUBOT_TWITCH_CHANNELS
-        robot.messageRoom room, "Oh no! We're busted. #{userCount} fools " +
-                                "lost #{totalLoss} credits. But not to " +
-                                "worry, another chance at glory is up in " +
-                                "#{BANKHACK_MINUTES} minutes!"
-    robot.brain.set 'hack_wagers', {}
-    robot.brain.set 'bankhack', 'unready'
-  
-  hackReminder = ->
-    for room in HUBOT_TWITCH_CHANNELS
-      wagers = robot.brain.get('hack_wagers') ? {}
-      userCount = 0
-      totalBets = 0
-      for user in Object.keys(wagers)
-        wager = parseInt(wagers[user])
-        totalBets += wager
-        userCount += 1
-      robot.messageRoom room, "Did you wager yet? The bank is almost broken." +
-                              " Put your credits up to bet with !bankhack " +
-                              "{amount}. #{userCount} players are already " +
-                              "in for #{totalBets}!"
+      result = "Oh no! We're busted. #{userCount} fools " +
+             "lost #{totalLoss} credits. But not to " +
+             "worry, another chance at glory is up in " +
+             "#{BANKHACK_MINUTES} minutes!"
+    hackEvents.emit 'messageRoom', ROOM, result
+    @cache['hack_wagers'] = {}
+    @cache['bankhack'] = 'unready'
 
-  cronJob = require('cron').CronJob
-  # Function to alert the room the hack is on!
-  hackAlert = ->
-    for room in HUBOT_TWITCH_CHANNELS
-      hacker = oceansThirteen[Math.floor(Math.random() * oceansThirteen.length)]
-      robot.messageRoom room, "Oh noes! #{hacker} is breaking into the bank. " + 
-                              "Get ready to reap all the sweet rewards. Type " +
-                              "!bankhack {amount} to wager and win!"
-      robot.brain.set 'bankhack', 'ready'
-      robot.brain.set 'hack_wagers', {}
+  hackReminder: ->
+    wagers = @cache['hack_wagers'] ? {}
+    userCount = 0
+    totalBets = 0
+    for user in Object.keys(wagers)
+      wager = parseInt(wagers[user])
+      totalBets += wager
+      userCount += 1
+    reminder = "Did you wager yet? The bank is almost broken." +
+           " Put your credits up to bet with !bankhack " +
+           "{amount}. #{userCount} players are already " +
+           "in for #{totalBets}!"
+    hackEvents.emit 'messageRoom', ROOM, reminder
 
-      # Note: the comma is not indented on the same spacing as performHack.
-      setTimeout ( ->
-        hackReminder()
-      ), BANKHACK_WAGER_TIME / 2
+  hackReady: ->
+    @cache['bankhack'] = 'ready'
+    @cache['hack_wagers'] = {}
 
-      setTimeout ( ->
-        performHack()
-      ), BANKHACK_WAGER_TIME
-
-  # Run bankhack on each interval
-  new cronJob("0 */#{BANKHACK_MINUTES} * * * *", hackAlert, null, true)
-
-  # Take a users hack wager
-  robot.hear /^!bankhack (\d+)/i, (msg) ->
-    if robot.brain.get('bankhack') == 'ready'
-      user = msg.envelope.user.name.toLowerCase()
-      wager = parseInt(msg.match[1])
-      wagers = robot.brain.get('hack_wagers') ? {}
-      creds = robot.brain.get('credits') ? {}
+  hackJoin: (user, wager) ->
+    if @cache['bankhack'] == 'ready'
+      wagers = @cache['hack_wagers'] ? {}
+      creds = @cache['credits'] ? {}
       current_wager = 0
-      currBalance = 0
-      if user in Object.keys(creds)
-        currBalance = parseInt(creds[user]['bank']) ? 0
+      payment = @curr.payCredits user, wager
 
-      if currBalance < wager
-        msg.send "Trying to be slick, #{user}? You don't have enough credits" +
-                   " to wager #{wager}!"
+      if payment < 0
+        return "Trying to be slick, #{user}? You don't have enough credits" +
+               " to wager #{wager}!"
       else 
         if user not in Object.keys(wagers)
           current_wager = wager
@@ -112,10 +99,40 @@ module.exports = (robot) ->
           current_wager += wager
 
         wagers[user] = current_wager
-        creds[user]['bank'] = currBalance - wager
-        robot.brain.set 'hack_wagers', wagers
-        robot.brain.set 'credits', creds
-        msg.send "#{user} is in for #{current_wager}."
+        @cache['hack_wagers'] = wagers
+        return "#{user} is in for #{current_wager}."
     else
-      msg.send "Sorry, the heat is too hot. Stay out of the kitchen!" 
-    
+      return "Sorry, the heat is too hot. Stay out of the kitchen!" 
+
+module.exports = (robot) ->
+  bankhack = new Bankhack robot
+  cronJob = require('cron').CronJob
+  # Function to alert the room the hack is on!
+  hackAlert = ->
+    hacker = oceansThirteen[Math.floor(Math.random() * oceansThirteen.length)]
+    robot.messageRoom ROOM, "Oh noes! #{hacker} is breaking into the bank. " + 
+                            "Get ready to reap all the sweet rewards. Type " +
+                            "!bankhack {amount} to wager and win!"
+    bankhack.hackReady()
+
+    # Note: the comma is not indented on the same spacing as performHack.
+    setTimeout ( ->
+      bankhack.hackReminder()
+    ), BANKHACK_WAGER_TIME / 2
+
+    setTimeout ( -> 
+      bankhack.performHack()
+    ), BANKHACK_WAGER_TIME
+
+  # Run bankhack on each interval
+  new cronJob("0 */#{BANKHACK_MINUTES} * * * *", hackAlert, null, true)
+
+  # Take a users hack wager
+  robot.hear /^!bankhack (\d+)/i, (msg) ->
+    user = msg.envelope.user.name.toLowerCase()
+    wager = parseInt(msg.match[1])
+    resp = bankhack.hackJoin user, wager
+    msg.send resp
+ 
+  hackEvents.on 'messageRoom', (room = "", message = "") ->
+    robot.messageRoom room, message

@@ -25,6 +25,7 @@ class Reminders
   getReminder: () ->
     if @reminders.length > 0
       item = @reminders[Math.floor(Math.random()*@reminders.length)]
+      return item
 
   remindHumans: () ->
     reminder = @getReminder()
@@ -36,6 +37,7 @@ class Reminders
     return 'Reminder added!'
 
 module.exports = (robot) ->
+  cronJob = require('cron').CronJob
   reminders = new Reminders robot
 
   # Remind humans on each interval
