@@ -7,7 +7,8 @@
 #   !addinventory {item} {cost} {defaultStock}
 #   !addstock {item} {number}
 #   !purchase {item}
-#   !sell {item}
+#   !sell {item} [{count}]
+#   !discard {item} [{count}]
 #
 
 SELL_DIVISOR = process.env.HUBOT_INVENTORY_SELL_DIVISOR ? 2
