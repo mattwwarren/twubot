@@ -58,17 +58,15 @@ class exports.Currency
   payCredits: (user, credits) ->
     if user not in Object.keys(@creds)
       @createUser user
-      return -1
+    balance = @creds[user]['bank'] ? 0
+    balance = parseInt(balance)
+    if balance >= credits
+      balance -= parseInt(credits)
+      @creds[user]['bank'] = balance
+      @robot.brain.set 'credits', @creds
+      return balance
     else
-      balance = @creds[user]['bank'] ? 0
-      balance = parseInt(balance)
-      if balance >= credits
-        balance -= parseInt(credits)
-        @creds[user]['bank'] = balance
-        @robot.brain.set 'credits', @creds
-        return balance
-      else
-        return -1
+      return -1
 
   updateCredits: (user, credits) ->
     if user not in Object.keys(@creds)

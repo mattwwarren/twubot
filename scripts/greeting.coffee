@@ -28,11 +28,11 @@ module.exports = (robot) ->
     if balance >= 0
       greetingp = viewers.setCustomGreeting user, greeting
       if greetingp
-        msg.reply "Your custom greeting is set!" +
+        msg.reply "your custom greeting is set!" +
                   " Next time you join, we will greet you!"
       else
         msg.reply "I'm sorry, I can't seem to find your user." +
                   " Please try again in a few minutes"
     else
-      msg.reply "You don't have enough credits to buy a custom greeting " +
+      msg.reply "you don't have enough credits to buy a custom greeting " +
                 "right now. Wait until you have at least #{GREETING_PRICE} credits!"

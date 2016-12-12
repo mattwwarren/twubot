@@ -6,18 +6,17 @@
 # Usage:
 #   !count {event} - increments the event count by one
 #
+robotBrain = require '../lib/brain'
 class Counts
   constructor: (@robot) ->
-    @counts = {}
+    @brain = new robotBrain.BrainSingleton.get @robot
+    @counts = @brain.get('counts') ? {}
     
-    @robot.brain.on 'loaded', =>
-      if @robot.brain.data.counts
-        @counts = @robot.brain.data.counts
-
   addCount: (toCount) ->
-    currCount = @counts[toCount] + 1 || 1
+    currCount = @counts[toCount] ? 0
+    currCount += 1
     @counts[toCount] = currCount
-    @robot.brain.set "counts", @counts
+    @brain.set "counts", @counts
     return currCount
 
   getCount: (toCount) ->
@@ -26,6 +25,17 @@ class Counts
       return @counts[toCount]
     else
       return -1
+
+  getCounts: () ->
+    resp = "Current events: "
+    if @counts and Object.keys(@counts).length > 0
+      countResp = []
+      for item of @counts
+        countResp.push "#{@counts[item]} #{item}"
+      resp += countResp.join(', ')
+    else
+      resp += "Nothing. Nothing has happened. Ever."
+    return resp
 
 module.exports = (robot) ->
   counts = new Counts robot
@@ -37,6 +47,10 @@ module.exports = (robot) ->
       msg.send "#{toCount} has happened #{resp} times"
     else
       msg.send "#{toCount} has not happened yet. Record it with !count"
+
+  robot.hear /!counts$/i, (msg) ->
+    resp = counts.getCounts()
+    msg.send resp
 
   robot.hear /!count (.*)$/i, (msg) ->
     toCount = msg.match[1]

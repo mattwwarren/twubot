@@ -1,18 +1,18 @@
 MAX_COMMANDS = process.env.HUBOT_MAX_COMMAND_LIST ? 20
+robotBrain = require '../lib/brain'
 
 class exports.CallNResponse
   constructor: (@robot) -> 
-    @cnr = {}
+    @brain = new robotBrain.BrainSingleton.get @robot
+    @cnr = @brain.get('call-n-response') ? {}
     @callRegex = ""
 
-    @robot.brain.on 'loaded', =>
-      if @robot.brain.data
-        @cnr = @robot.brain.get 'call-n-response'
-        @callRegex = new RegExp("^!(" + Object.keys(@cnr).join("|") + ")", "i")
+  getCallRegex: () ->
+    return new RegExp("^!(" + Object.keys(@cnr).join("|") + ")", "i")
 
   addResponse: (call, response) ->
     @cnr[call] = response
-    @robot.brain.set 'call-n-response', @cnr
+    @brain.set 'call-n-response', @cnr
     return "Added command: " + call
 
   getResponse: (call) ->
@@ -28,7 +28,7 @@ class exports.CallNResponse
       else 
         resp = resp + ", " + command                                 
     if totalCommands > MAX_COMMANDS
-       return "Oh my, there are #{totalCommands} in the system! " +
+       return "Oh my, there are #{totalCommands} commands in the system! " +
               "There's no way I could list them all!"
     else
        return resp

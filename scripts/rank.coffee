@@ -12,36 +12,38 @@ HUBOT_TWITCH_RANK_PRICE = process.env.HUBOT_TWITCH_RANK_PRICE || 20000
 
 _ = require 'underscore'
 currency = require '../lib/currency'
+robotBrain = require '../lib/brain'
 
 class Ranks
   constructor: (@robot) -> 
-    @ranks = {}
-    @curr = new currency.Currency robot
-
-    @robot.brain.on 'loaded', =>
-      if @robot.brain.data
-        @ranks = @robot.brain.get('ranks') ? {}
-        @users = @robot.brain.users()
+    @brain = new robotBrain.BrainSingleton.get @robot
+    @ranks = @brain.get('ranks') ? {}
+    @users = @brain.getUsers() ? {}
+    @curr = new currency.Currency @robot
 
   addRank: (cost, rank) ->
-    if rank in _.keys(@ranks)
+    if rank of @ranks
       return "Sorry, #{rank} already exists as a rank"
     else
       @ranks[rank] = cost
-      @robot.brain.set 'ranks', @ranks
+      @brain.set 'ranks', @ranks
       return "#{rank} is now available as a rank. Pay up #{cost} credits to join"
 
   joinRank: (rank, user) ->
-    if rank in _.keys(@ranks)
+    if rank of @ranks
       cost = @ranks[rank]
       balance = @curr.getBalance user
-      if balance > cost
-        uranks = @users[user].ranks ? []
+      userObj = @users[user] ? {}
+      if balance >= cost
+        uranks = userObj.ranks ? []
         if rank in uranks
           return "um, you're already in #{rank}"
         else
           uranks.push rank
-          @users[user].ranks = uranks
+          userObj.ranks = uranks
+          @curr.payCredits user, cost
+          @users[user] = userObj
+          @brain.setUsers @users
           return "you are now a member of #{rank}!"
       else
         return "Sorry, you don't have enough credits to join #{rank}. You need #{cost}."
@@ -49,23 +51,32 @@ class Ranks
       return "Sorry, #{rank} is not a valid rank. Check ranks with !listranks"
     
   listRanks: ->
-    resp = 'All ranks are: '
+    resp = 'Available ranks: '
     rankList = []
-    for rank in _.keys(@ranks)
-      rankCost = @ranks[rank]
-      rankList.push "#{rank}: #{rankCost}"
-    resp += rankList.join(', ')
+    if Object.keys(@ranks).length > 0
+      for rank of @ranks
+        rankCost = @ranks[rank]
+        rankList.push "#{rank}: #{rankCost}"
+      resp += rankList.join(', ')
+    else
+      resp += 'none! Add one with !addrank'
     return resp
     
   checkRank: (user) ->
-    return "#{user} is a member of #{@users[user].ranks.join(', ')}"
+    userRanks = @users[user] and @users[user].ranks ? []
+    if userRanks.length > 0
+      resp = "#{user} is a member of #{@users[user].ranks.join(', ')}"
+    else
+      resp = "#{user} is not a member of any rank!"
+    return resp
 
   leaveRank: (rank, user) ->
-    if rank in _.keys(@ranks)
-      uranks = @users[user].ranks ? []
+    if rank of @ranks
+      uranks = @users[user] and @users[user].ranks ? []
       if rank in uranks
         uranks.splice uranks.indexOf(rank), 1
         @users[user].ranks = uranks
+        @brain.setUsers @users
         return "you are no longer a member of #{rank}!"
       else
         return "um, you're not in #{rank}"
@@ -83,7 +94,7 @@ module.exports = (robot) ->
       resp = ranks.addRank rankCost, rankName
       msg.send resp
     else
-      msg.reply "No can do. You're not an admin."
+      msg.reply "no can do. You're not an admin."
 
   robot.hear /^!joinrank (.+)/i, (msg) ->
     rankName = msg.match[1]
@@ -99,7 +110,7 @@ module.exports = (robot) ->
     resp = ranks.listRanks()
     msg.send resp
 
-  robot.hear /^!checkranks? (\w+)/i, (msg) ->
+  robot.hear /^!checkranks? ?(\w+)?/i, (msg) ->
     user = msg.match[1] || msg.envelope.user.name.toLowerCase()
     resp = ranks.checkRank user
     msg.send resp
