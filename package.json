@@ -24,6 +24,9 @@
   "engines": {
     "node": "4.3.x"
   },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --compilers \"coffee:coffee-script/register\" tests/"
+  },
   "devDependencies": {
     "chai": "^3.5.0",
     "coffee-script": "^1.11.1",
