@@ -1,5 +1,5 @@
 # Description:
-#   Track viewer first joins, follows, and last seen
+#   Create custom greetings and allow purchase of them
 # 
 # Configuration:
 #
