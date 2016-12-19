@@ -1,0 +1,22 @@
+## Twitch API Connection
+There are some functions that require information from the Twitch API. Right now, twubot requires credentials for each instance. If you are running your own copy, it is required that you generate your own credentials.
+
+### Registering twubot
+
+1. Go to https://www.twitch.tv/kraken/oauth2/clients/new
+2. Fill out the form
+  * Application Name: twubot
+  * Redirect URI: http://localhost
+  * Application Category: Chat Bot
+  * Mailing List: up to you. If you want to start developing your own applications, feel free to leave this checked.
+  * Accept Terms: Check this. Read the links, if you dare.
+3. Click `Register`
+4. Copy the `Client ID` into your config
+5. Click `New Secret`
+  * Accept the pop up that asks if you're sure
+6. Copy the new Client Secret into your config
+7. Click Update for good measure
+
+### Don't want to do all this?
+
+Let us run twubot for you! Check out https://prattlr.com for more info.
