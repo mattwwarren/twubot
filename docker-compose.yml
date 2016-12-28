@@ -1,8 +1,11 @@
 version: '2'
+volumes:
+   node_modules:
 services:
    prattlr:
      build: .
      restart: always
      volumes:
        - .:/opt/prattlr/
+       - node_modules:/opt/prattlr/node_modules
      env_file: ${PRATTLR_CONFIG}/${TENANT}_env
