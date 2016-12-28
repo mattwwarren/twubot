@@ -1,4 +1,5 @@
 _ = require 'underscore'
+robotBrain = require './brain'
 
 HUBOT_TWITCH_ADMINS = process.env.HUBOT_TWITCH_ADMINS?.split "," || []
 HUBOT_TWITCH_OWNERS = process.env.HUBOT_TWITCH_OWNERS?.split "," || []
@@ -6,13 +7,8 @@ moderators = HUBOT_TWITCH_ADMINS.concat HUBOT_TWITCH_OWNERS
 
 class exports.Currency
   constructor: (@robot) ->
-    @creds = {}
-
-    @robot.brain.on 'loaded', =>
-      if @robot.brain.data
-        @creds = @robot.brain.get('credits') ? {}
-      else
-        @robot.brain.set 'credits', @creds
+    @brain = new robotBrain.BrainSingleton.get @robot
+    @creds = @brain.get('credits') ? {}
 
   createUser: (user) ->
     checkUser = user.toLowerCase()
@@ -22,7 +18,7 @@ class exports.Currency
       balance = parseInt(balance)
       @creds[checkUser]['bank'] = balance
 
-    @robot.brain.set 'credits', @creds
+    @brain.set 'credits', @creds
 
   # Function to give everyone the appropriate amount of credits
   earnCredits: (credits) ->
@@ -33,7 +29,7 @@ class exports.Currency
         balance += parseInt(credits)
         @creds[user]['bank'] = balance
 
-    @robot.brain.set 'credits', @creds
+    @brain.set 'credits', @creds
 
   userEnter: (user) ->
     now = new Date().getTime()
@@ -47,13 +43,13 @@ class exports.Currency
     if not @creds[user]['firstJoined']?
       @creds[user]['firstJoined'] = now
 
-    @robot.brain.set 'credits', @creds
+    @brain.set 'credits', @creds
 
   userExit: (user) ->
     if user in Object.keys(@creds)
       @creds[user]['active'] = 'false'
     
-    @robot.brain.set 'credits', @creds
+    @brain.set 'credits', @creds
       
   payCredits: (user, credits) ->
     if user not in Object.keys(@creds)
@@ -63,7 +59,7 @@ class exports.Currency
     if balance >= credits
       balance -= parseInt(credits)
       @creds[user]['bank'] = balance
-      @robot.brain.set 'credits', @creds
+      @brain.set 'credits', @creds
       return balance
     else
       return -1
@@ -76,10 +72,10 @@ class exports.Currency
     balance += parseInt(credits)
     @creds[user]['bank'] = balance
 
-    @robot.brain.set 'credits', @creds
+    @brain.set 'credits', @creds
 
   getBalance: (user) ->
-    wagers = @robot.brain.get('hack_wagers') or {}
+    wagers = @brain.get('hack_wagers') or {}
     if user not in Object.keys(@creds)
       @createUser user
     balance = @creds[user]['bank'] ? 0
@@ -99,7 +95,7 @@ class exports.Currency
           balance += parseInt(amount)
           @creds[user]['bank'] = balance
     
-      @robot.brain.set 'credits', @creds
+      @brain.set 'credits', @creds
       return "Gave everyone #{amount} credits!"
 
   checkTop: ->

@@ -7,18 +7,13 @@
 #   Initial plan is to only allow binary responses
 #
 _ = require 'underscore'
+robotBrain = require '../lib/brain'
 VOTE_TIME = (process.env.HUBOT_VOTE_TIME ? 2) * 60 * 1000
 
 class Votes
   constructor: (@robot) -> 
-    @cache = {}
-    @voting = {}
-
-    @robot.brain.on 'loaded', =>
-      if @robot.brain.data
-        @cache = @robot.brain.data
-      if @robot.brain.data.voting
-        @voting = @robot.brain.data.voting
+    @brain = new robotBrain.BrainSingleton.get @robot
+    @voting = @brain.get('voting') ? {}
 
   pollReminder: (room, poll) ->
     choices = @voting.choices.join(', ')
@@ -27,7 +22,6 @@ class Votes
                                "with one of #{choices}. The question is: #{poll}"
 
   pollResults: (room, poll) ->
-    voting = @voting
     results = @voting.responses
     allResults = ""
     # Need to reverse this but no internet on the flight
@@ -46,8 +40,7 @@ class Votes
     @voting["live"] = false
     @voting["current_vote"] = ""
     @voting["choices"] = []
-    @robot.brain.set "voting", @voting
-    @cache = @robot.brain.data
+    @brain.set "voting", @voting
 
   setPoll: (poll, room, choices) ->
     @voting["responses"] = @generateResponses(choices)
@@ -56,10 +49,9 @@ class Votes
     @voting["live"] = true
     @voting["current_vote"] = poll
     @voting["choices"] = choices
-    @cache["vote_#{poll}"] = @voting
+    @brain.set "vote_#{poll}", @voting
 
-    @robot.brain.set "voting", @voting
-    @robot.brain.set "vote_#{poll}", @cache["vote_#{poll}"]
+    @brain.set "voting", @voting
 
   generateResponses: (choices) ->
     responses = {}
@@ -87,7 +79,7 @@ class Votes
     return @voting.responses
 
   getVoteInfo: (poll) ->
-    return @cache["vote_#{poll}"]
+    return @brain.get("vote_#{poll}")
 
   addVote: (user, answer) ->
     votes = @getVotes()
@@ -111,9 +103,8 @@ class Votes
           vote_info["votes"] = votes
           vote_info["voters"] = voters
           vote_info["responses"] = responses
-          @cache["vote_#{poll}"] = vote_info
-          @robot.brain.set "vote_#{poll}", vote_info
-          @robot.brain.set "voting", @voting
+          @brain.set "vote_#{poll}", vote_info
+          @brain.set "voting", @voting
           return "#{user} voted #{answer}"
         else
           return "Sorry #{user}, #{answer} is not a valid " +

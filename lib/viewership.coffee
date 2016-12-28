@@ -1,21 +1,18 @@
 # Class to handle viewers, viewer data and viewer analytics
 #
 
+robotBrain = require './brain'
 TwitchApi = require 'twitch-api'
 moment = require 'moment'
 class exports.Viewership
   constructor: (@robot, @channel) ->
-    @users = {}
+    @brain = new robotBrain.BrainSingleton.get @robot
+    @users = @brain.getUsers() ? {}
+    @streams = @brain.get('streams') ? []
     twapiParams = {'clientId': process.env.HUBOT_TWITCH_CLIENT_ID}
     twapiParams['clientSecret'] = process.env.HUBOT_TWITCH_CLIENT_SECRET
     twapiParams['redirectUri'] = process.env.HUBOT_TWITCH_REDIRECT_URI
     twapiParams['scopes'] = ['user_read', 'channel_read']
-
-    @robot.brain.on 'loaded', =>
-      if @robot.brain.users
-        @users = @robot.brain.users()
-      if @robot.brain.data
-        @streams = @robot.brain.get('streams') ? []
 
     @twapi = new TwitchApi twapiParams
 
@@ -28,6 +25,7 @@ class exports.Viewership
     @checkFollows user, (followp) =>
       if followp
         @users[user]['followDate'] = followp.calendar()
+    @brain.setUsers @users
 
   userExit: (user) ->
     now = new Date().getTime()
@@ -36,6 +34,7 @@ class exports.Viewership
     @checkFollows user, (followp) =>
       if followp
         @users[user]['followDate'] = followp.calendar()
+    @brain.setUsers @users
 
   getLastSeen: (user) ->
     now = new Date().getTime()
@@ -70,6 +69,7 @@ class exports.Viewership
       return true
     else
       return false
+    @brain.setUsers @users
     
   getCustomGreeting: (user) ->
     if @users[user]

@@ -21,36 +21,32 @@ oceansThirteen = ['George Clooney', 'Brad Pitt', 'Matt Damon', 'Al Pacino',
                   'Don Cheadle', 'Bernie Mac', 'Casey Affleck']
 
 currency = require '../lib/currency'
+robotBrain = require '../lib/brain'
 
 class Bankhack
   constructor: (@robot) -> 
+    @brain = new robotBrain.BrainSingleton.get @robot
     @curr = new currency.Currency @robot
-    @cache = {}
-
-    @robot.brain.on 'loaded', =>
-      if @robot.brain.data
-        @cache = @robot.brain.data
+    @wagers = @brain.get('hack_wagers') ? {}
 
   performHack: ->
     hackChance = Math.floor(Math.random() * 100)
-    creds = @cache['credits'] ? {}
-    wagers = @cache['hack_wagers'] ? {}
     userCount = 0
     totalWin = 0
     totalLoss = 0
     result = ""
     if hackChance < BANKHACK_WIN_RATE
-      for user in Object.keys(wagers)
+      for user in Object.keys(@wagers)
         currBalance = @curr.getBalance user
-        winnings = parseInt(wagers[user]) * BANKHACK_WIN_MULTIPLIER
+        winnings = parseInt(@wagers[user]) * BANKHACK_WIN_MULTIPLIER
         totalWin += winnings
         userCount += 1
         @curr.updateCredits user, winnings
       result = "Success! #{userCount} high rollers made it " +
              "out alive with #{totalWin} credits."
     else
-      for user in Object.keys(wagers)
-        losings = parseInt(wagers[user])
+      for user in Object.keys(@wagers)
+        losings = parseInt(@wagers[user])
         totalLoss += losings
         userCount += 1
       result = "Oh no! We're busted. #{userCount} fools " +
@@ -58,15 +54,14 @@ class Bankhack
              "worry, another chance at glory is up in " +
              "#{BANKHACK_MINUTES} minutes!"
     @robot.emit 'hackMessage', ROOM, result
-    @cache['hack_wagers'] = {}
-    @cache['bankhack'] = 'unready'
+    @brain.set 'hack_wagers', {}
+    @brain.set 'bankhack', 'unready'
 
   hackReminder: ->
-    wagers = @cache['hack_wagers'] ? {}
     userCount = 0
     totalBets = 0
-    for user in Object.keys(wagers)
-      wager = parseInt(wagers[user])
+    for user in Object.keys(@wagers)
+      wager = parseInt(@wagers[user])
       totalBets += wager
       userCount += 1
     reminder = "Did you wager yet? The bank is almost broken." +
@@ -76,13 +71,11 @@ class Bankhack
     @robot.emit 'hackMessage', ROOM, reminder
 
   hackReady: ->
-    @cache['bankhack'] = 'ready'
-    @cache['hack_wagers'] = {}
+    @brain.set 'bankhack', 'ready'
+    @brain.set 'hack_wagers', {}
 
   hackJoin: (user, wager) ->
-    if @cache['bankhack'] == 'ready'
-      wagers = @cache['hack_wagers'] ? {}
-      creds = @cache['credits'] ? {}
+    if @brain.get('bankhack') == 'ready'
       current_wager = 0
       payment = @curr.payCredits user, wager
 
@@ -90,14 +83,14 @@ class Bankhack
         return "Trying to be slick, #{user}? You don't have enough credits" +
                " to wager #{wager}!"
       else 
-        if user not in Object.keys(wagers)
+        if user not in Object.keys(@wagers)
           current_wager = wager
         else
-          current_wager = parseInt(wagers[user])
+          current_wager = parseInt(@wagers[user])
           current_wager += wager
 
-        wagers[user] = current_wager
-        @cache['hack_wagers'] = wagers
+        @wagers[user] = current_wager
+        @brain.set 'hack_wagers', @wagers
         return "#{user} is in for #{current_wager}."
     else
       return "Sorry, the heat is too hot. Stay out of the kitchen!" 
