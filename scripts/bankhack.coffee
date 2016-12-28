@@ -7,7 +7,6 @@
 # Notes:
 #
 
-{EventEmitter} = require 'events'
 BANKHACK_MINUTES = process.env.HUBOT_BANKHACK_TIMEOUT ? 15
 BANKHACK_WAGER_TIME = (process.env.HUBOT_BANKHACK_WAGER_TIME ? 2) * 60 * 1000
 BANKHACK_WIN_RATE = process.env.HUBOT_BANKHACK_WIN ? 50
@@ -17,7 +16,6 @@ HUBOT_TWITCH_OWNERS = process.env.HUBOT_TWITCH_OWNERS?.split "," || []
 HUBOT_TWITCH_CHANNELS = process.env.HUBOT_TWITCH_CHANNELS?.split "," || []
 ROOM = process.env.HUBOT_TWITCH_CHANNELS
 
-hackEvents = new EventEmitter
 moderators = HUBOT_TWITCH_ADMINS.concat HUBOT_TWITCH_OWNERS
 oceansThirteen = ['George Clooney', 'Brad Pitt', 'Matt Damon', 'Al Pacino',
                   'Don Cheadle', 'Bernie Mac', 'Casey Affleck']
@@ -59,7 +57,7 @@ class Bankhack
              "lost #{totalLoss} credits. But not to " +
              "worry, another chance at glory is up in " +
              "#{BANKHACK_MINUTES} minutes!"
-    hackEvents.emit 'messageRoom', ROOM, result
+    @robot.emit 'hackMessage', ROOM, result
     @cache['hack_wagers'] = {}
     @cache['bankhack'] = 'unready'
 
@@ -75,7 +73,7 @@ class Bankhack
            " Put your credits up to bet with !bankhack " +
            "{amount}. #{userCount} players are already " +
            "in for #{totalBets}!"
-    hackEvents.emit 'messageRoom', ROOM, reminder
+    @robot.emit 'hackMessage', ROOM, reminder
 
   hackReady: ->
     @cache['bankhack'] = 'ready'
@@ -134,5 +132,5 @@ module.exports = (robot) ->
     resp = bankhack.hackJoin user, wager
     msg.send resp
  
-  hackEvents.on 'messageRoom', (room = "", message = "") ->
+  robot.on 'hackMessage', (room = "", message = "") ->
     robot.messageRoom room, message
