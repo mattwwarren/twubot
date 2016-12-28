@@ -9,13 +9,11 @@
 #   !addReminder Something something something follow, like, subscribe.
 #
 
-{EventEmitter} = require 'events'
 REMINDER_TIMEOUT = process.env.HUBOT_REMINDER_INTERVAL ? 10
 ROOM = process.env.HUBOT_TWITCH_CHANNELS
 HUBOT_TWITCH_ADMINS = process.env.HUBOT_TWITCH_ADMINS?.split "," || []
 HUBOT_TWITCH_OWNERS = process.env.HUBOT_TWITCH_OWNERS?.split "," || []
 
-remindEvents = new EventEmitter
 robotBrain = require '../lib/brain'
 
 class Reminders
@@ -30,7 +28,7 @@ class Reminders
 
   remindHumans: () ->
     reminder = @getReminder()
-    remindEvents.emit 'messageRoom', ROOM, reminder
+    @robot.emit 'remindMessage', ROOM, reminder
 
   addReminder: (reminder) ->
     @reminders.push reminder
@@ -54,5 +52,5 @@ module.exports = (robot) ->
       resp = 'Sorry, you are not allowed to add reminders'
     msg.send resp
 
-  remindEvents.on 'messageRoom', (room = "", message = "") ->
+  robot.on 'remindMessage', (room = "", message = "") ->
     robot.messageRoom room, message

@@ -7,9 +7,7 @@
 #   Initial plan is to only allow binary responses
 #
 _ = require 'underscore'
-{EventEmitter} = require 'events'
 VOTE_TIME = (process.env.HUBOT_VOTE_TIME ? 2) * 60 * 1000
-voteEvents = new EventEmitter
 
 class Votes
   constructor: (@robot) -> 
@@ -24,7 +22,7 @@ class Votes
 
   pollReminder: (room, poll) ->
     choices = @voting.choices.join(', ')
-    voteEvents.emit 'messageRoom', room, "Did you vote yet? The question is still " +
+    @robot.emit 'voteMessage', room, "Did you vote yet? The question is still " +
                                "open! Submit your answer with !vote {choice} " +
                                "with one of #{choices}. The question is: #{poll}"
 
@@ -37,11 +35,11 @@ class Votes
       results[result]
     winner = rankedResults.reverse()[0]
     if winner != rankedResults.reverse()[1]
-      voteEvents.emit 'messageRoom', room, "It's all over! The winner is #{winner}!"
+      @robot.emit 'voteMessage', room, "It's all over! The winner is #{winner}!"
     else
       for result in _.keys(results)
         allResults = allResults + " #{result} had #{results[result]} votes"
-      voteEvents.emit 'messageRoom', room, "It's a tie!" + allResults
+      @robot.emit 'voteMessage', room, "It's a tie!" + allResults
     @voting["responses"] = {}
     @voting["votes"] = 0
     @voting["voters"] = []
@@ -160,5 +158,5 @@ module.exports = (robot) ->
     resp = votes.addVote user, answer
     msg.send resp
 
-  voteEvents.on 'messageRoom', (room = "", message = "") ->
+  robot.on 'voteMessage', (room = "", message = "") ->
     robot.messageRoom room, message
