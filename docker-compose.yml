@@ -1,0 +1,8 @@
+version: '2'
+services:
+   prattlr:
+     build: .
+     restart: always
+     volumes:
+       - .:/opt/prattlr/
+     env_file: ${PRATTLR_CONFIG}/${TENANT}_env
